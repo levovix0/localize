@@ -9,7 +9,7 @@ type Language* {.pure.} = enum
 
 var lang*: Language
 
-localizeInit Language, bindSym"lang"
+initLocalize Language, bindSym"lang"
 ```
 
 src/app.nim
@@ -53,6 +53,24 @@ tr("it is working!", "code")  # "он работает!"
   }
 }
 ```
+
+## formating
+tr is auto-calling fmt 
+```nim
+let name = stdin.readline
+echo tr"Hi, {name}"
+```
+
+```json
+{
+  "app.nim": {
+    "Hi, {name}": {
+      "": "Привет, {name}",
+    }
+  }
+}
+```
+
 
 ## known issues
 * `"abc".tr("d")` is not working correctly

@@ -6,6 +6,9 @@
     "it is working!": {
       "": "it is working!",
       "code": "it is working!"
+    },
+    "Result is {res}": {
+      "": "Result is {res}"
     }
   }
 }

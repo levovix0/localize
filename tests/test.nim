@@ -7,7 +7,7 @@ type Language {.pure.} = enum
 
 var lang: Language
 
-localizeInit Language, bindSym"lang"
+initLocalize Language, bindSym"lang"
 
 test "hello, world":
   check tr"Hello, world" == "Hello, world"
@@ -20,5 +20,10 @@ test "context":
     tr"it is working!" == "оно работает!"
     tr("it is working!", "") == "оно работает!"
     tr("it is working!", "code") == "он работает!"
+
+test "formating":
+  lang = Language.ru
+  let res = 88305 * 24314 / 21
+  check tr"Result is {res}" == "Результат: 102240370.0"
 
 updateTranslations()
