@@ -9,6 +9,15 @@
     },
     "Result is {res}": {
       "": "Result is {res}"
+    },
+    "abc": {
+      "": "abc"
+    }
+  },
+  "test.nim": {
+    "abc": {
+      "": "abc",
+      "d": "abc"
     }
   }
 }

@@ -26,4 +26,10 @@ test "formating":
   let res = 88305 * 24314 / 21
   check tr"Result is {res}" == "Результат: 102240370.0"
 
+test "method call syntax":
+  lang = Language.ru
+  check "abc".tr == "абв"
+  check "abc".tr("") == "абв"
+  check "abc".tr("d") == "абвгд"
+
 updateTranslations()

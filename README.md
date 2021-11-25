@@ -38,9 +38,9 @@ translations/ru.json
 
 ## specifing context
 ```nim
-tr"it is working!"            # same as "" context
-tr("it is working!", "")      # "оно работает!"
-tr("it is working!", "code")  # "он работает!"
+"it is working!".tr          # same as "" context
+"it is working!".tr("")      # "оно работает!"
+"it is working!".tr("code")  # "он работает!"
 ```
 
 ```json
@@ -73,6 +73,5 @@ echo tr"Hi, {name}"
 
 
 ## known issues
-* `"abc".tr("d")` is not working correctly
 * recompilation without changing code is not updating translations
 * translations directory needs to be created manually
