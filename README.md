@@ -71,6 +71,13 @@ echo tr"Hi, {name}"
 }
 ```
 
+## detecting system language
+```nim
+var lang = case systemLocale().lang
+of "ru": Language.ru
+else:    Language.en
+```
+system locale values bases on linux's LANG env variable
 
 ## known issues
 * recompilation without changing code is not updating translations

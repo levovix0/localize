@@ -50,3 +50,45 @@ template initLocalize*(Language: type, langVar) =
         r{x.file, x.s, x.comment} = newJString f{x.file, x.s, x.comment}.getStr(x.s)
       
       writeFile("translations" / ($lang & ".json"), r.pretty)
+
+
+when defined(windows):
+  const
+    Chinese = 4
+    German = 7
+    English = 9
+    Spanish = 10
+    Japanese = 11
+    French = 12
+    Italian = 16
+    Polish = 21
+    Russian = 25
+  
+  # TODO: seems like this method is deprecated
+  proc GetUserDefaultLangID(): int {.importc, dynlib: "Kernel32.dll".}
+
+  proc systemLocale*: tuple[lang, variant: string] =
+    let lang = GetUserDefaultLangID() and 0x00FF
+    case lang
+    of Chinese: ("zh", "")
+    of German: ("de", "")
+    of English: ("en", "")
+    of Spanish: ("es", "")
+    of Japanese: ("ja", "")
+    of French: ("fr", "")
+    of Italian: ("it", "")
+    of Polish: ("pl", "")
+    of Russian: ("ru", "")
+    else: ("en", "")
+
+else:
+  import os, strutils
+
+  proc systemLocale*: tuple[lang, variant: string] =
+    ## returns system locale
+    ## parses "en_US.UTF-8" as ("en", "us")
+    var lang = getEnv("LANG", "en_US.UTF-8")
+    if lang.endsWith(".UTF-8"):
+      lang = lang[0..^7]
+    let l = lang.split("_")
+    (l[0].toLower, l[1..^1].join("_").toLower)
