@@ -24,7 +24,7 @@ translations/ru.json
   }
 }
 ```
-note: static translations are generated for each **nimble packege** that uses localize, in package root directory
+* Static translations are generated for each **nimble packege** that uses localize, in package root directory
 
 ## specifing context
 ```nim
@@ -65,7 +65,7 @@ echo tr"Hi, {name}"
 ```nim
 globalLocale = systemLocale()
 ```
-system locale values are based on linux's LANG env variable formated at all
+* system locale values are based on linux's LANG env variable formated at all
 
 ## dynamic translations
 ```nim
@@ -84,8 +84,8 @@ globalLocale = (
   }
 )
 ```
-note: dynamic translations files are diffirent from static translations files: they contain table for modules  
-note: for now, dynamic translations are not formated
+* Dynamic translations files are diffirent from static translations files: they contain table for modules  
+* For now, dynamic translations are not formated
 
 ## known issues
 * for now, dynamicly loaded translations cannot be formated at all
