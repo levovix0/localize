@@ -84,7 +84,7 @@ globalLocale = (
   }
 )
 ```
-note: dynamic translations files are diffirent from static translations files: they contain table for modules
+note: dynamic translations files are diffirent from static translations files: they contain table for modules  
 note: for now, dynamic translations are not formated
 
 ## known issues
