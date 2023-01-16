@@ -65,7 +65,7 @@ echo tr"Hi, {name}"
 ```nim
 globalLocale = systemLocale()
 ```
-* system locale values are based on linux's LANG env variable formated at all
+* system locale values are based on linux's LANG env variable
 
 ## dynamic translations
 ```nim
