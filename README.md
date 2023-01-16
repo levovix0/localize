@@ -1,28 +1,17 @@
 Simply localize your apps
 
-src/config.nim
+app.nim
 ```nim
 import localize
-type Language* {.pure.} = enum
-  en
-  ru
 
-var lang*: Language
-
-initLocalize Language, bindSym"lang"
-```
-
-src/app.nim
-```nim
-import config
+requireLocalesToBeTranslated ("ru", "")
 
 echo tr"Hello, world"  # "Hello, world"
-lang = Language.ru
+globalLocale = locale"ru"
 echo tr"Hello, world"  # "Привет, мир"
 
 when isMainModule:
   updateTranslations()  # traslations is readed and updated when compiling
-  # (current implementation needs to create `traslations` dir manualy for the first time)
 ```
 
 translations/ru.json
@@ -35,6 +24,7 @@ translations/ru.json
   }
 }
 ```
+note: static translations are generated for each **nimble packege** that uses localize, in package root directory
 
 ## specifing context
 ```nim
@@ -73,12 +63,29 @@ echo tr"Hi, {name}"
 
 ## detecting system language
 ```nim
-var lang = case systemLocale().lang
-of "ru": Language.ru
-else:    Language.en
+globalLocale = systemLocale()
 ```
-system locale values bases on linux's LANG env variable
+system locale values are based on linux's LANG env variable formated at all
+
+## dynamic translations
+```nim
+import json
+
+globalLocale = (
+  ("zh", ""),
+  parseLocaleTable %*{
+    "mypackage": {
+      "src/myapp.nim": {
+        "Hello, world": {
+          "": "你好，世界",
+        },
+      },
+    },
+  }
+)
+```
+note: dynamic translations files are diffirent from static translations files: they contain table for modules
+note: for now, dynamic translations are not formated
 
 ## known issues
-* recompilation without changing code is not updating translations
-* translations directory needs to be created manually
+* for now, dynamicly loaded translations cannot be formated at all
