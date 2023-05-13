@@ -7,7 +7,7 @@ import localize
 requireLocalesToBeTranslated ("ru", "")
 
 echo tr"Hello, world"  # "Hello, world"
-globalLocale = locale"ru"
+globalLocale[0] = ("ru", "")
 echo tr"Hello, world"  # "Привет, мир"
 
 when isMainModule:
@@ -63,7 +63,7 @@ echo tr"Hi, {name}"
 
 ## detecting system language
 ```nim
-globalLocale = systemLocale()
+globalLocale[0] = systemLocale()
 ```
 * system locale values are based on linux's LANG env variable
 
