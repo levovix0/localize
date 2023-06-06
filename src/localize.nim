@@ -38,7 +38,9 @@ proc findNimbleModule(startPath: string): tuple[name, translationsPath, fileRoot
   ## returns name of the module and path where translations is stored
   ## also, if dir contains `*.localize-translations` file, result name will be name of this file and path to translations dir same as path to file dir
   ## if no dir was found, module name will be "", and path to translations will be translations dir in startPath
-  for path in startPath.parentDirs:
+  var path = startPath
+  while not path.isRootDir:
+    defer: path = path.splitPath.head
     for k, file in path.walkDir:
       if k notin {pcFile, pcLinkToFile}:
         continue
@@ -48,9 +50,9 @@ proc findNimbleModule(startPath: string): tuple[name, translationsPath, fileRoot
       if ext == ".localize-translations":
         return (name, path, path)
       if ext == ".nimble":
-        return (name, path/"translations", path)
+        return (name, path & "/" & "translations", path)  # todo: use compilation-time os specific separator
 
-  return ("", startPath/"translations", startPath)
+  return ("", startPath & "/" & "translations", startPath)
 
 
 proc loadCompileTimeLocale(module, file: string, locale: Locale) {.compileTime.} =
@@ -65,10 +67,10 @@ proc loadCompileTimeLocale(module, file: string, locale: Locale) {.compileTime.}
             for context, translation in context:
               try:
                 compileTimeTranslations[module][locale].files[file][text][context] = translation.to(string)
-              except: discard
-          except: discard
-      except: discard
-  except: discard
+              except KeyError: discard
+          except KeyError: discard
+      except KeyError: discard
+  except KeyError: discard
 
 proc loadCompileTimeLocales(module, translationsDir: string) {.compileTime.} =
   compileTimeTranslations[module] = Table[Locale, tuple[files: Table[string, Table[string, Table[string, string]]], trFile: string]].default
@@ -144,7 +146,7 @@ proc trImpl2(text, context, file, module, translationsDir: string, langVar: NimN
 
 
 macro trImpl(text, context, file: static string, langVar: (Locale, LocaleTable)): string =
-  let (name, translationsDir, fileRoot) = findNimbleModule(file.parentDir)
+  let (name, translationsDir, fileRoot) = findNimbleModule(file.splitPath.head)
   trImpl2(text, context, file.relativePath(fileRoot, '/'), name, translationsDir, langVar)
 
 
@@ -155,7 +157,7 @@ template tr*(text: static string, context: static string = "", langVar: (Locale,
 
 
 macro requireLocalesToBeTranslatedImpl(locales: static seq[Locale], file: static string) =
-  let (_, translationsDir, _) = findNimbleModule(file.parentDir)
+  let (_, translationsDir, _) = findNimbleModule(file.splitPath.head)
   if not translationsDir.dirExists:
     var tdQuoted = ""
     tdQuoted.addQuoted translationsDir
