@@ -70,7 +70,7 @@ proc loadCompileTimeLocale(module, file: string, locale: Locale) {.compileTime.}
               except KeyError: discard
           except KeyError: discard
       except KeyError: discard
-  except KeyError: discard
+  except CatchableError: discard
 
 proc loadCompileTimeLocales(module, translationsDir: string) {.compileTime.} =
   compileTimeTranslations[module] = Table[Locale, tuple[files: Table[string, Table[string, Table[string, string]]], trFile: string]].default
@@ -161,6 +161,8 @@ macro requireLocalesToBeTranslatedImpl(locales: static seq[Locale], file: static
   if not translationsDir.dirExists:
     var tdQuoted = ""
     tdQuoted.addQuoted translationsDir
+    when defined(mingw):
+      discard staticExec("mkdir " & tdQuoted)
     when defined(windows):
       discard staticExec("md " & tdQuoted)
     elif defined(linux):
@@ -170,12 +172,12 @@ macro requireLocalesToBeTranslatedImpl(locales: static seq[Locale], file: static
 
   for x in locales:
     if x.variant == "":
-      if not fileExists(translationsDir/(x.lang & ".json")):
-        writeFile translationsDir/(x.lang & ".json"), ""
+      if not fileExists(translationsDir & "/" & (x.lang & ".json")):
+        writeFile translationsDir & "/" & (x.lang & ".json"), ""
     
     else:
-      if not fileExists(translationsDir/(x.lang & "_" & x.variant & ".json")):
-        writeFile translationsDir/(x.lang & "_" & x.variant & ".json"), ""
+      if not fileExists(translationsDir & "/" & (x.lang & "_" & x.variant & ".json")):
+        writeFile translationsDir & "/" & (x.lang & "_" & x.variant & ".json"), ""
 
 template requireLocalesToBeTranslated*(locales: varargs[Locale]) =
   bind requireLocalesToBeTranslatedImpl
