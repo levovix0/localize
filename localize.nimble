@@ -1,6 +1,6 @@
-version       = "0.3.1"
+version       = "0.3.2"
 author        = "levovix0"
-description   = "Compile time localization for applications"
+description   = "Compile time localization for applications and libraries"
 license       = "MIT"
 srcDir        = "src"
 
