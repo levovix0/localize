@@ -1,4 +1,8 @@
-Simply localize your apps
+# Localize
+<img alt="sigui" width="100%" src="http://levovix.ru:8000/docs/localize/banner.png">
+<p align="center">
+  Localize your applications at compile-time
+</p>
 
 app.nim
 ```nim
