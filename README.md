@@ -7,7 +7,7 @@ import localize
 requireLocalesToBeTranslated ("ru", "")
 
 echo tr"Hello, world"  # "Hello, world"
-globalLocale[0] = ("ru", "")
+globalLocale = locale "ru"
 echo tr"Hello, world"  # "Привет, мир"
 
 when isMainModule:

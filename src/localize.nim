@@ -10,9 +10,13 @@ type
     ## dynamically loaded translations are stored in this table
     ## key order is:
     ##   nimble module -> file -> text -> context -> translation
+  
+  LangVar* = tuple
+    locale: Locale
+    table: LocaleTable
 
 var
-  globalLocale*: (Locale, LocaleTable)
+  globalLocale*: LangVar
 
   toTranslate {.compileTime.}: HashSet[tuple[text, context, file, module: string]]
   compileTimeTranslations {.compileTime.}: Table[string, Table[Locale, tuple[files: Table[string, Table[string, Table[string, string]]], trFile: string]]]
@@ -21,7 +25,7 @@ var
   translationsAccepted {.compileTime.} = false
 
 
-proc locale*(lang="", variant="", localeTable: LocaleTable = LocaleTable.default): (Locale, LocaleTable) =
+proc locale*(lang="", variant="", localeTable: LocaleTable = LocaleTable.default): LangVar =
   ((lang, variant), localeTable)
 
 
@@ -91,7 +95,7 @@ proc loadCompileTimeLocales(module, translationsDir: string) {.compileTime.} =
 
 proc trImpl2(text, context, file, module, translationsDir: string, langVar: NimNode): NimNode =
   if translationsAccepted: error("translations was accepted, put `updateTranslations()` under `tr` call, make sure you use updateTranslations in `when isMainModule` block")
-  
+
   toTranslate.incl (text, context, file, module)
   
   if module notin compileTimeTranslations:
@@ -132,7 +136,7 @@ proc trImpl2(text, context, file, module, translationsDir: string, langVar: NimN
       if checkHasKey:
         elifBranch:
           call bindSym"==":
-            dotExpr(bracketExpr(langVar, 0.newLit), ident"lang")
+            bracketExpr(bracketExpr(langVar, 0.newLit), 0.newLit)
             locale.lang.newLit
           call bindSym"fmt":
             newLit: compileTimeTranslations[module][locale].files[file][text][context]
@@ -145,12 +149,18 @@ proc trImpl2(text, context, file, module, translationsDir: string, langVar: NimN
     result = result[0][0]
 
 
-macro trImpl(text, context, file: static string, langVar: (Locale, LocaleTable)): string =
+macro trImpl(text, context, file: static string, langVar: LangVar): string =
   let (name, translationsDir, fileRoot) = findNimbleModule(file.splitPath.head)
   trImpl2(text, context, file.relativePath(fileRoot, '/'), name, translationsDir, langVar)
 
 
-template tr*(text: static string, context: static string = "", langVar: (Locale, LocaleTable) = globalLocale): string =
+template tr*(text: static string, context: static string = "", langVar: LangVar = globalLocale): string =
+  bind trImpl
+  let langv {.cursor.} = langVar
+  trImpl(text, context, instantiationInfo(index=0, fullPaths=true).filename, langv)
+
+
+template tr*(langVar: LangVar, text: static string, context: static string = ""): string =
   bind trImpl
   let langv {.cursor.} = langVar
   trImpl(text, context, instantiationInfo(index=0, fullPaths=true).filename, langv)
