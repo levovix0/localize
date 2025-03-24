@@ -1,4 +1,4 @@
-version       = "0.3.3"
+version       = "0.3.4"
 author        = "levovix0"
 description   = "Compile time localization for applications and libraries"
 license       = "MIT"
