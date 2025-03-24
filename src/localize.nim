@@ -173,8 +173,8 @@ macro requireLocalesToBeTranslatedImpl(locales: static seq[Locale], file: static
     tdQuoted.addQuoted translationsDir
     when defined(mingw):
       discard staticExec("mkdir " & tdQuoted)
-    when defined(windows):
-      discard staticExec("md " & tdQuoted)
+    # when defined(windows):
+    #   discard staticExec("md " & tdQuoted)
     elif defined(linux):
       discard staticExec("mkdir " & tdQuoted)
     else:
@@ -192,7 +192,7 @@ macro requireLocalesToBeTranslatedImpl(locales: static seq[Locale], file: static
 template requireLocalesToBeTranslated*(locales: varargs[Locale]) =
   bind requireLocalesToBeTranslatedImpl
   bind toSeq
-  requireLocalesToBeTranslatedImpl(toSeq(locales), instantiationInfo(index=0, fullPaths=true).filename)
+  requireLocalesToBeTranslatedImpl(@locales, instantiationInfo(index=0, fullPaths=true).filename)
 
 
 proc parseLocaleTable*(json: JsonNode): LocaleTable =
