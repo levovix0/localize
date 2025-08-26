@@ -1,5 +1,4 @@
 import tables, os, macros, json, strformat, sets, strutils, sequtils
-import fusion/astdsl
 
 type
   Locale* = tuple
@@ -101,50 +100,69 @@ proc trImpl2(text, context, file, module, translationsDir: string, langVar: NimN
   if module notin compileTimeTranslations:
     loadCompileTimeLocales(module, translationsDir)
 
-  result = buildAst(ifStmt):
-    template checkHasKey: bool {.dirty.} =
-      (compileTimeTranslations[module][locale].files.hasKey file) and
-      (compileTimeTranslations[module][locale].files[file].hasKey text) and
-      (compileTimeTranslations[module][locale].files[file][text].hasKey context)
-    
-    elifBranch:
-      call bindSym"hasTranslation":
-        bracketExpr(langVar, 1.newLit)
-        newLit text
-        newLit context
-        newLit file
-        newLit module
-      call bindSym"getTranslation":
-        bracketExpr(langVar, 1.newLit)
-        newLit text
-        newLit context
-        newLit file
-        newLit module
+  result = nnkIfStmt.newTree()
 
-    for locale in compileTimeTranslations[module].keys:
-      if locale.variant == "": continue
-      if checkHasKey:
-        elifBranch:
-          call bindSym"==":
-            bracketExpr(langVar, 0.newLit)
-            tupleConstr(locale.lang.newLit, locale.variant.newLit)
-          call bindSym"fmt":
-            newLit: compileTimeTranslations[module][locale].files[file][text][context]
-
-    for locale in compileTimeTranslations[module].keys:
-      if locale.variant != "": continue
-      if checkHasKey:
-        elifBranch:
-          call bindSym"==":
-            bracketExpr(bracketExpr(langVar, 0.newLit), 0.newLit)
-            locale.lang.newLit
-          call bindSym"fmt":
-            newLit: compileTimeTranslations[module][locale].files[file][text][context]
-
-    Else:
-      call bindSym"fmt":
-        text.newLit
+  template checkHasKey: bool {.dirty.} =
+    (compileTimeTranslations[module][locale].files.hasKey file) and
+    (compileTimeTranslations[module][locale].files[file].hasKey text) and
+    (compileTimeTranslations[module][locale].files[file][text].hasKey context)
   
+  result.add nnkElifBranch.newTree(
+    nnkCall.newTree(
+      bindSym("hasTranslation"),
+      nnkBracketExpr.newTree(langVar, 1.newLit),
+      newLit(text),
+      newLit(context),
+      newLit(file),
+      newLit(module),
+    ),
+    nnkCall.newTree(
+      bindSym("getTranslation"),
+      nnkBracketExpr.newTree(langVar, 1.newLit),
+      newLit(text),
+      newLit(context),
+      newLit(file),
+      newLit(module),
+    )
+  )
+
+  for locale in compileTimeTranslations[module].keys:
+    if locale.variant == "": continue
+    if checkHasKey:
+      result.add nnkElifBranch.newTree(
+        nnkCall.newTree(
+          bindSym("=="),
+          nnkBracketExpr.newTree(langVar, 0.newLit),
+          nnkTupleConstr.newTree(locale.lang.newLit, locale.variant.newLit)
+        ),
+        nnkCall.newTree(
+          bindSym("fmt"),
+          newLit(compileTimeTranslations[module][locale].files[file][text][context])
+        )
+      )
+
+  for locale in compileTimeTranslations[module].keys:
+    if locale.variant != "": continue
+    if checkHasKey:
+      result.add nnkElifBranch.newTree(
+        nnkCall.newTree(
+          bindSym("=="),
+          nnkBracketExpr.newTree(nnkBracketExpr.newTree(langVar, 0.newLit), 0.newLit),
+          locale.lang.newLit
+        ),
+        nnkCall.newTree(
+          bindSym("fmt"),
+          newLit(compileTimeTranslations[module][locale].files[file][text][context])
+        )
+      )
+
+  result.add nnkElse.newTree(
+    nnkCall.newTree(
+      bindSym("fmt"),
+      text.newLit
+    )
+  )
+
   if result.len == 1:
     result = result[0][0]
 
@@ -207,12 +225,17 @@ proc parseLocaleTable*(json: JsonNode): LocaleTable =
           result[module][file][text][context] = translation.to(string)
 
 
-macro updateTranslations* =
+macro updateTranslations*(removeExisting: static bool = false) =
   translationsAccepted = true
 
   for module, locales in compileTimeTranslations:
     for locale, (files, trFile) in locales:
       var t: Table[string, Table[string, Table[string, string]]]
+
+      if not removeExisting:
+        if fileExists(trFile):
+          try: t = trFile.readFile.parseJson.to(Table[string, Table[string, Table[string, string]]])
+          except: discard
 
       for (text, context, file, module2) in toTranslate:
         if module2 != module: continue
@@ -224,11 +247,11 @@ macro updateTranslations* =
         if not(t[file][text].hasKey context):
           t[file][text][context] = text
 
-        if 
+        if (
           (compileTimeTranslations[module][locale].files.hasKey file) and
           (compileTimeTranslations[module][locale].files[file].hasKey text) and
           (compileTimeTranslations[module][locale].files[file][text].hasKey context)
-        :
+        ):
           t[file][text][context] = compileTimeTranslations[module][locale].files[file][text][context]
         else:
           t[file][text][context] = text
