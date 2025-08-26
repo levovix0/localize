@@ -188,14 +188,17 @@ macro requireLocalesToBeTranslatedImpl(locales: static seq[Locale], file: static
   let (_, translationsDir, _) = findNimbleModule(file.splitPath.head)
   if not translationsDir.dirExists:
     var tdQuoted = ""
-    tdQuoted.addQuoted translationsDir
+    tdQuoted.addQuoted translationsDir.replace("\\", "/")
     when defined(mingw):
       discard staticExec("mkdir " & tdQuoted)
-    # when defined(windows):
-    #   discard staticExec("md " & tdQuoted)
+    when defined(windows):
+      discard staticExec("md " & tdQuoted)
     elif defined(linux):
       discard staticExec("mkdir " & tdQuoted)
     else:
+      error("please, create " & tdQuoted & " directory manually")
+    
+    if not translationsDir.dirExists:
       error("please, create " & tdQuoted & " directory manually")
 
   for x in locales:
