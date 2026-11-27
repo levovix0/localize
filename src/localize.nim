@@ -1,4 +1,4 @@
-import tables, os, macros, json, strformat, sets, strutils, sequtils
+import tables, os, macros, json, strformat, sets, strutils, sequtils, algorithm
 
 type
   Locale* = tuple
@@ -228,38 +228,52 @@ proc parseLocaleTable*(json: JsonNode): LocaleTable =
           result[module][file][text][context] = translation.to(string)
 
 
+proc getOrMakeObject(n: var JsonNode, key: string): JsonNode {.compileTime.} =
+  ## returns `n[key]`, making sure it is a json object
+  if n.kind != JObject:
+    n = newJObject()
+  if not n.hasKey(key) or n[key].kind != JObject:
+    n[key] = newJObject()
+  result = n[key]
+
+
 macro updateTranslations*(removeExisting: static bool = false) =
   translationsAccepted = true
 
   for module, locales in compileTimeTranslations:
     for locale, (files, trFile) in locales:
-      var t: Table[string, Table[string, Table[string, string]]]
+      # order of fields in the written json is the order they appear in the existing file,
+      # new fields are appended at the end in sorted order, so compilation does not shuffle them
+      var root: JsonNode = newJObject()
 
       if not removeExisting:
         if fileExists(trFile):
-          try: t = trFile.readFile.parseJson.to(Table[string, Table[string, Table[string, string]]])
+          try:
+            let parsed = trFile.readFile.parseJson
+            if parsed.kind == JObject:
+              root = parsed
           except: discard
 
+      var required: seq[tuple[file, text, context: string]]
       for (text, context, file, module2) in toTranslate:
         if module2 != module: continue
+        required.add (file, text, context)
+      required.sort
 
-        if not(t.hasKey file):
-          t[file] = Table[string, Table[string, string]].default
-        if not(t[file].hasKey text):
-          t[file][text] = Table[string, string].default
-        if not(t[file][text].hasKey context):
-          t[file][text][context] = text
+      for (file, text, context) in required:
+        var texts = getOrMakeObject(root, file)
+        var contexts = getOrMakeObject(texts, text)
 
         if (
-          (compileTimeTranslations[module][locale].files.hasKey file) and
-          (compileTimeTranslations[module][locale].files[file].hasKey text) and
-          (compileTimeTranslations[module][locale].files[file][text].hasKey context)
+          (files.hasKey file) and
+          (files[file].hasKey text) and
+          (files[file][text].hasKey context)
         ):
-          t[file][text][context] = compileTimeTranslations[module][locale].files[file][text][context]
+          contexts[context] = newJString(files[file][text][context])
         else:
-          t[file][text][context] = text
+          contexts[context] = newJString(text)
 
-      writeFile trFile, (%*t).pretty
+      writeFile trFile, root.pretty
 
 
 when defined(windows):
